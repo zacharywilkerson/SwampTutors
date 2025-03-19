@@ -1,18 +1,33 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getTutorsByCourse } from "../../firebase";
 import { ALL_COURSES } from "../../constants/courses";
 import { useAuth } from "../../hooks/useAuth";
 import { useTutorRedirect } from "../../hooks/useTutorRedirect";
+import ClientSearchParamsProvider from "../../components/ClientSearchParamsProvider";
 
 export default function SearchPage() {
-  const searchParams = useSearchParams();
-  const query = searchParams.get("q");
-  const deptFilter = searchParams.get("dept");
-  
+  return (
+    <ClientSearchParamsProvider
+      render={({ getParam }) => {
+        return <SearchPageContent 
+          query={getParam('q')} 
+          deptFilter={getParam('dept')} 
+        />;
+      }}
+    />
+  );
+}
+
+function SearchPageContent({ 
+  query, 
+  deptFilter 
+}: { 
+  query: string | null, 
+  deptFilter: string | null 
+}) {
   const { user, userRole } = useAuth();
   // Check if tutor has completed profile
   const { isLoading: redirectLoading, hasCheckedStatus } = useTutorRedirect(['/tutor/profile-setup', '/tutor/profile-pending']);

@@ -1,8 +1,5 @@
 import { httpsCallable, Functions, getFunctions } from 'firebase/functions';
-import { initFirebase } from './config';
-
-// Initialize Firebase if not already initialized
-initFirebase();
+import { app } from './config';
 
 // Get a reference to the functions service
 let functionsInstance: Functions | null = null;
@@ -12,7 +9,7 @@ let functionsInstance: Functions | null = null;
  */
 export const getFunctionsInstance = (): Functions => {
   if (!functionsInstance) {
-    functionsInstance = getFunctions();
+    functionsInstance = getFunctions(app);
   }
   return functionsInstance;
 };
@@ -58,4 +55,4 @@ export const createStripeConnectAccount = async (
     console.error('Error creating Stripe Connect account:', error);
     throw error;
   }
-}; 
+};
