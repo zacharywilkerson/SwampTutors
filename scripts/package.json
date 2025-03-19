@@ -1,0 +1,13 @@
+{
+  "name": "uf-catalog-scraper",
+  "version": "1.0.0",
+  "description": "Scraper for UF course catalog",
+  "main": "scrape-course-catalog.js",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "scripts": {
+    "scrape": "node scrape-course-catalog.js"
+  }
+} 

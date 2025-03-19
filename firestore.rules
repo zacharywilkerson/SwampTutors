@@ -1,0 +1,146 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection rules
+    match /users/{userId} {
+      // Allow read access to all authenticated users
+      // For non-authenticated users, allow only reading basic tutor info for approved tutors
+      allow read: if request.auth != null || 
+                     exists(/databases/$(database)/documents/tutors/$(userId)) && 
+                     get(/databases/$(database)/documents/tutors/$(userId)).data.profileStatus == 'approved';
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Tutors collection rules
+    match /tutors/{tutorId} {
+      // Allow read access to all users (including anonymous)
+      // Allow write access only to the tutor themselves or admin
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == tutorId && 
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'tutor';
+      allow update: if request.auth != null && 
+                      (request.auth.uid == tutorId || 
+                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Tutor Availability collection rules
+    match /tutorAvailability/{tutorId} {
+      // Allow any user to read availability (including anonymous users)
+      // Allow only tutors to manage their own availability
+      allow read: if true;
+      allow create, update: if request.auth != null && 
+                           request.auth.uid == tutorId && 
+                           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'tutor';
+      allow delete: if request.auth != null && 
+                      (request.auth.uid == tutorId || 
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is the student of this lesson
+    function isLessonStudent(lessonData) {
+      return isAuthenticated() && request.auth.uid == lessonData.studentId;
+    }
+    
+    // Helper function to check if user is the tutor of this lesson
+    function isLessonTutor(lessonData) {
+      return isAuthenticated() && request.auth.uid == lessonData.tutorId;
+    }
+    
+    // Helper function to check if user is an admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Helper function to check if a lesson's date is at least 24 hours in the future
+    function isLesson24HoursAhead(lessonData) {
+      // Convert timestamp to milliseconds
+      let lessonTime = lessonData.date.toMillis();
+      let currentTime = request.time.toMillis();
+      let hoursDifference = (lessonTime - currentTime) / (1000 * 60 * 60);
+      return hoursDifference >= 24;
+    }
+    
+    // Rules for lessons collection
+    match /lessons/{lessonId} {
+      // Allow reading if the user is a participant or admin
+      allow read: if isAuthenticated() && (
+        // Users can read their own lessons
+        request.auth.uid == resource.data.studentId || 
+        request.auth.uid == resource.data.tutorId || 
+        isAdmin()
+      );
+      
+      // Allow listing lessons for availability checking
+      // This is needed for tutor availability check during booking
+      allow list: if isAuthenticated();
+      
+      // Allow creating new lessons with proper validation
+      allow create: if isAuthenticated() && 
+        // Ensure the studentId matches the currently authenticated user
+        request.auth.uid == request.resource.data.studentId &&
+        // Ensure required fields are present
+        request.resource.data.keys().hasAll(['tutorId', 'studentId', 'courseCode', 'date', 'duration', 'status']) &&
+        // Ensure the status is set to 'scheduled' or 'pending_payment'
+        (request.resource.data.status == 'scheduled' || request.resource.data.status == 'pending_payment');
+      
+      // Allow updates based on user role and specific changes
+      allow update: if
+        // Students can only update to add a review to their own completed lessons
+        (isLessonStudent(resource.data) && 
+         resource.data.status == 'completed' &&
+         !resource.data.reviewed &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['review', 'reviewed'])) ||
+        
+        // Students can update payment-related fields for their own lessons during payment confirmation
+        (isLessonStudent(resource.data) && 
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'paymentStatus', 'paymentIntentId'])) ||
+        
+        // Students can reschedule lessons that are 24+ hours away
+        (isLessonStudent(resource.data) &&
+         resource.data.status == 'scheduled' &&
+         request.resource.data.status == 'rescheduled' &&
+         isLesson24HoursAhead(resource.data) &&
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'originalDate', 'date', 'rescheduleDate'])) ||
+        
+        // Students can cancel lessons that are 24+ hours away
+        (isLessonStudent(resource.data) &&
+         (resource.data.status == 'scheduled' || resource.data.status == 'rescheduled') &&
+         request.resource.data.status == 'cancelled' &&
+         isLesson24HoursAhead(resource.data) &&
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'cancellationReason', 'cancellationDate'])) ||
+        
+        // Tutors can cancel lessons that are 24+ hours away
+        (isLessonTutor(resource.data) &&
+         (resource.data.status == 'scheduled' || resource.data.status == 'rescheduled') &&
+         request.resource.data.status == 'cancelled' &&
+         isLesson24HoursAhead(resource.data) &&
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'cancellationReason', 'cancellationDate'])) ||
+        
+        // Tutors can update lesson completion notes
+        (isLessonTutor(resource.data) &&
+         request.resource.data.status == 'completed' &&
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'completionNotes'])) ||
+        
+        // Admins can update any lesson
+        isAdmin();
+      
+      // Only admins can delete lessons
+      allow delete: if isAdmin();
+    }
+  }
+} 
