@@ -5,7 +5,7 @@ import { getUserById } from '../../../../firebase/firestore';
 
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-06-20', // Use the latest version
+  apiVersion: '2024-06-20', // Use the latest version here
 });
 
 // Create a Stripe Connect account for a tutor
