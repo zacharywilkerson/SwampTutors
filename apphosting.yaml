@@ -1,0 +1,56 @@
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+runConfig:
+  minInstances: 0
+  # maxInstances: 100
+  # concurrency: 80
+  # cpu: 1
+  # memoryMiB: 512
+
+# Environment variables and secrets.
+env:
+
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyBeHt9-11LK3z0Ic5Z-JJYnapYu2BBoSRY
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: uf-tutor-marketplace.firebaseapp.com
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: uf-tutor-marketplace
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: uf-tutor-marketplace.firebasestorage.app
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: 179344578188
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:179344578188:web:538e819a3340586ef20da9
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-CHXBWR97TT
+
+    # STRIPE KEYS
+
+  - variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    value: pk_test_51R31V5LAdmEXsThfbxYvFN8rSnmBcIekP10SdLeUx9kfnZ4IujsjdKo73ZDJtDp4QIgMRpKyi0jZRQhH8TWCoHSw00UFGCDpZz
+
+  - variable: STRIPE_WEBHOOK_SECRET
+    value: whsec_1234567890
+
+  - variable: STRIPE_SECRET_KEY
+    value: sk_test_51R31V5LAdmEXsThfqkHT4wV4wJbxRqW9l5LZq6YZOJsO4Ap4SMMasnNn4vX7NsWTsxphLORccOBZ6zYWuzucty8a00d1c0D9yO
+  
+  # Configure environment variables.
+  # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
+  # - variable: MESSAGE
+  #   value: Hello world!
+  #   availability:
+  #     - BUILD
+  #     - RUNTIME
+
+  # Grant access to secrets in Cloud Secret Manager.
+  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+  # - variable: MY_SECRET
+  #   secret: mySecretRef
