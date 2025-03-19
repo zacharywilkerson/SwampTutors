@@ -1,14 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { loadStripe, Stripe, StripeElements, StripePaymentElement } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import PaymentForm from '@/components/PaymentForm';
 import Link from 'next/link';
+import ClientSearchParamsProvider from '@/components/ClientSearchParamsProvider';
 
 export default function PaymentPage() {
+  return (
+    <ClientSearchParamsProvider
+      render={({ searchParams }) => {
+        return <PaymentPageContent searchParams={searchParams} />;
+      }}
+    />
+  );
+}
+
+function PaymentPageContent({ searchParams }: { searchParams: URLSearchParams }) {
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState('');
   const [paymentIntentId, setPaymentIntentId] = useState('');
@@ -16,7 +26,6 @@ export default function PaymentPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
-  const searchParams = useSearchParams();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -121,4 +130,4 @@ export default function PaymentPage() {
       </div>
     </div>
   );
-} 
+}

@@ -1,16 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthLayout from "../../components/AuthLayout";
 import { signIn, signInWithGoogle } from "../../firebase";
 import { useAuth } from "../../hooks/useAuth";
+import ClientSearchParamsProvider from "../../components/ClientSearchParamsProvider";
 
 export default function Login() {
+  return (
+    <ClientSearchParamsProvider
+      render={({ getParam }) => {
+        return <LoginContent returnUrl={getParam('returnUrl')} />;
+      }}
+    />
+  );
+}
+
+function LoginContent({ returnUrl }: { returnUrl: string | null }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const returnUrl = searchParams.get('returnUrl');
   const { user, userRole, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -196,4 +205,4 @@ export default function Login() {
       </div>
     </AuthLayout>
   );
-} 
+}

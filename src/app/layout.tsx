@@ -5,6 +5,7 @@ import { AuthProvider } from "../hooks/useAuth";
 import { StripeProvider } from "../context/StripeContext";
 import Navbar from "../components/Navbar";
 import PageTransition from "../components/PageTransition";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,9 +36,13 @@ export default function RootLayout({
           {/* Using updated StripeProvider that only initializes the Stripe instance, not Elements */}
           <StripeProvider>
             <Navbar />
-            <PageTransition>
-              {children}
-            </PageTransition>
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>}>
+              <PageTransition>
+                {children}
+              </PageTransition>
+            </Suspense>
           </StripeProvider>
         </AuthProvider>
       </body>

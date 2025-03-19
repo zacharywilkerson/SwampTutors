@@ -1,16 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createLesson, checkExistingLessonBooking, isTutorAvailableAtTime } from '@/firebase/firestore';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
+import ClientSearchParamsProvider from '@/components/ClientSearchParamsProvider';
 
 export default function PaymentConfirmation() {
+  return (
+    <ClientSearchParamsProvider
+      render={({ searchParams }) => {
+        return <PaymentConfirmationContent searchParams={searchParams} />;
+      }}
+    />
+  );
+}
+
+function PaymentConfirmationContent({ searchParams }: { searchParams: URLSearchParams }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing your payment and booking...');
